@@ -46,6 +46,7 @@ void substract(float val) {
 
 void updateTemp(float val) {
     _ctx.readTemp = val;
+    _ctx.isReadValid = true;
 }
 
 // The setup() function runs once each time the micro-controller starts
@@ -72,12 +73,27 @@ void setup()
     _downBtn.valid = 0;
     _downBtn.changedAt = millis();
 
-    _ctx.setTemp = 34;
+    _ctx.setTemp = 37.7f;
     _ctx.lastSetTemp = 0;
     _ctx.lastReadTemp = 0;
+
+    _ctx.isReadValid = false;
+
+    _ctx.isFanOn = false;
+    _ctx.isHeatOn = false;
 }
 
-int cnt = 0;
+void clearChars() {
+    _lcd.setCursor(0, 0);
+    _lcd.print(" ");
+    _lcd.setCursor(0, 1);
+    _lcd.print(" ");
+
+    _lcd.setCursor(6, 0);
+    _lcd.print("        ");
+    _lcd.setCursor(6, 1);
+    _lcd.print("        ");
+}
 
 // Add the main program code into the continuous loop() function
 void loop()
@@ -95,23 +111,50 @@ void loop()
         _ctx.lastSetTemp = _ctx.setTemp;
         _ctx.lastReadTemp = _ctx.readTemp;
 
-        _lcd.clear();
+        clearChars();
+        if (_ctx.isFanOn) {
+            _lcd.setCursor(0, 1);
+            _lcd.print("-");
+        }
+        if (_ctx.isHeatOn) {
+            _lcd.setCursor(0, 0);
+            _lcd.print("+");
+        }
 
         print_temp(_lcd, 0, "Set  ", _ctx.setTemp);
         print_temp(_lcd, 1, "Read ", _ctx.readTemp);    
 
+        /* Only do stuff when temp read */
+        if (_ctx.isReadValid) {
+            /* Fan hysteresis: go off when at or less than set (heater is cooling slowly after goes off) */
+            if (_ctx.isFanOn) {
+                if (_ctx.readTemp <= _ctx.setTemp) {
+                    digitalWrite(FAN_PIN, HIGH);
+                    _ctx.isFanOn = false;
+                }
+            }
+            else {
+                if (_ctx.readTemp > _ctx.setTemp + 1.0f) {
+                    digitalWrite(FAN_PIN, LOW);
+                    _ctx.isFanOn = true;
+                }
+            }
 
-        /* Start FAN when temp greater 2 degrees than wat is set*/
-        digitalWrite(
-            FAN_PIN,
-            tempActual < _ctx.setTemp + 2    // off if less than set + 2
-            ? HIGH      // off
-            : LOW);     // on
-
-        digitalWrite(
-            HEAT_PIN,
-            tempActual < _ctx.setTemp - 2    // on if less than set - 2
-            ? LOW       // on
-            : HIGH);    // off
+            if (!_ctx.isFanOn) {    // never heating when fan is on
+                if (_ctx.isHeatOn) {
+                    if (_ctx.readTemp >= _ctx.setTemp) {
+                        /* Go off directly at set, heater will be hot some time after anyway */
+                        digitalWrite(HEAT_PIN, HIGH);
+                        _ctx.isHeatOn = false;
+                    }
+                }
+                else {
+                    if (_ctx.readTemp <= _ctx.setTemp - 1.0f) {
+                        digitalWrite(HEAT_PIN, LOW);
+                        _ctx.isHeatOn = true;
+                    }
+                }
+            }
+        }
     }
 }

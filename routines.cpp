@@ -121,6 +121,6 @@ void print_temp(LiquidCrystal_I2C lcd, int row, String prefix, float value) {
     text += " ";
     text += (char)223;
     text += "C";
-    lcd.setCursor(1, row);
+    lcd.setCursor(2, row);
     lcd.print(text);
 }

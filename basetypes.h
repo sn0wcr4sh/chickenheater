@@ -15,6 +15,11 @@ typedef struct {
 typedef struct {
     float setTemp;
     float lastSetTemp;
+    
     float readTemp;
     float lastReadTemp;
+    bool isReadValid;
+
+    bool isFanOn;
+    bool isHeatOn;
 } context_t;
