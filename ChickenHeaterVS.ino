@@ -73,7 +73,7 @@ void setup()
     _downBtn.valid = 0;
     _downBtn.changedAt = millis();
 
-    _ctx.setTemp = 37.7f;
+    _ctx.setTemp = 37.75f;
     _ctx.lastSetTemp = 0;
     _ctx.lastReadTemp = 0;
 
