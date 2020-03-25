@@ -1,6 +1,6 @@
 #include "routines.h"
 
-#define ADC_OFFSET -0.2f
+#define ADC_OFFSET -0.30f
 #define TEMP_FILTERTIME 50
 #define TEMP_EPSILON 0.5f
 

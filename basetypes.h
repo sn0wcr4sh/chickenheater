@@ -1,5 +1,18 @@
 #pragma once
 
+typedef enum {
+    eHeat,
+    eCool,
+    eIdle
+} action_e;
+
+typedef enum {
+    eOnTime,
+    eOffTime,
+    eFinish,
+    eDone
+} action_state_e;
+
 typedef struct {
     int current;
     int valid;
