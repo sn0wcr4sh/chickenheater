@@ -39,7 +39,7 @@
 LiquidCrystal_I2C _lcd(0x27, 20, 4);
 
 double _set, _input, _output;
-double Kp = 2, Ki = 5, Kd = 3;
+double Kp = 20, Ki = 1, Kd = 1;
 
 PID _pid(&_input, &_output, &_set, Kp, Ki, Kd, DIRECT);
 
@@ -70,16 +70,16 @@ void updateTemp(float val) {
     _ctx.isReadValid = true;
 }
 
-void clearIndicators() {
-    if (!_ctx.isHeatOn) {
-        _lcd.setCursor(0, 0);
-        _lcd.print(" ");
-    }
+void updateIndicators() {
+    _lcd.setCursor(0, 0);
+    _lcd.print(_ctx.isHeatOn
+        ? "+"
+        : " ");
 
-    if (!_ctx.isFanOn) {
-        _lcd.setCursor(0, 1);
-        _lcd.print(" ");
-    }
+    _lcd.setCursor(0, 1);
+    _lcd.print(_ctx.isFanOn
+        ? "-"
+        : " ");
 }
 
 void clearChars() {
@@ -91,7 +91,9 @@ void clearChars() {
 
 unsigned long toMillis(double pidValue) {
     unsigned long result = (unsigned long)(double)(pidValue * TIME_SLICE_MS / 255.0);
-    return result;
+    return result < TIME_SLICE_MS
+        ? result
+        : TIME_SLICE_MS;
 }
 
 void setHeat(bool state) {
@@ -165,7 +167,7 @@ void loop()
     readButton(UP_PIN, &_upBtn, add);
     readButton(DOWN_PIN, &_downBtn, substract);
 
-    clearIndicators();
+    updateIndicators();
 
     float tempActual = getTemperature(analogRead(A2));
     updateFiltertimed(tempActual, &_filteredTemp, updateTemp);
@@ -204,14 +206,6 @@ void loop()
 
     if (setChanged || readChanged) {
         clearChars();
-        if (_ctx.isFanOn) {
-            _lcd.setCursor(0, 1);
-            _lcd.print("-");
-        }
-        if (_ctx.isHeatOn) {
-            _lcd.setCursor(0, 0);
-            _lcd.print("+");
-        }
 
         print_temp(_lcd, 0, "Set  ", _ctx.setTemp);
         print_temp(_lcd, 1, "Read ", _ctx.readTemp);
